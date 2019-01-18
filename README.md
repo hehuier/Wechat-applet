@@ -2,7 +2,7 @@
 ## app.is
 ## app.json
 ###[pages](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#pages)  
-  **All pages must be here.** 
+  **All pages must be here.**  
   **First is default to view **
 `{
   "pages": ["pages/index/index", "pages/logs/logs"]
