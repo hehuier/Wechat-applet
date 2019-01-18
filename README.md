@@ -1,5 +1,12 @@
 # wechat [原生项目搭建](https://github.com/zce/weapp-boilerplate)
-## app.is
+##  [app.is](https://github.com/EastWorld/wechat-app-mall/blob/master/app.js)
+``` javascipt
+/**
+ * Request 模块 请求数据
+ * @type {Object}
+ */
+const api = require('./utils/request.js')
+```
 ## app.json
 ### [pages](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#pages)  
 >**All pages must be here.**  
@@ -60,5 +67,9 @@
    "downloadFile": 10000
   }
   ``` 
+  ## [utils](https://github.com/EastWorld/wechat-app-mall/tree/master/utils)
+  
+  # [wepy](https://github.com/Tencent/wepy)
+  
 
 
