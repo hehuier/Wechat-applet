@@ -4,9 +4,7 @@
 ### [pages](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#pages)  
 >**All pages must be here.**  
 >**First is default to view**  
-  >`{`
-  `"pages": ["pages/index/index", "pages/logs/logs"] `
-  `}`
+` ``{ "pages": ["pages/index/index", "pages/logs/logs"] }` ``
 ### [window](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#window) 
   >**用于设置小程序的状态栏、导航条、标题、窗口背景色。**  
    >`{
