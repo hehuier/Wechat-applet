@@ -9,7 +9,7 @@
 }`
 ### [window](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#window) 
   **用于设置小程序的状态栏、导航条、标题、窗口背景色。**  
- ·{
+    `{
   "window": {
     "navigationBarBackgroundColor": "#ffffff",
     "navigationBarTextStyle": "black",
@@ -17,10 +17,10 @@
     "backgroundColor": "#eeeeee",
     "backgroundTextStyle": "light"
   }
-}·
+}`
 ### [tabBar](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#tabBar) 
 **如果小程序是一个多 tab 应用（客户端窗口的底部或顶部有 tab 栏可以切换页面），可以通过 tabBar 配置项指定 tab 栏的表现，以及 tab 切换时显示的对应页面。**  
-· "tabBar": {
+` "tabBar": {
     "color": "#999999",
     "selectedColor": "#35495e",
     "borderStyle": "white",
@@ -45,7 +45,7 @@
         "selectedIconPath": "images/profile-actived.png"
       }
     ]
-  },·  
+  },`
   ### [networkTimeout](https://developers.weixin.qq.com/miniprogram/dev/framework/config.html#networkTimeout) 
   **网络超时时间**  
   ·  "networkTimeout": {
