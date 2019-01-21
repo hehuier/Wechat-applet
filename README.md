@@ -67,7 +67,7 @@ const api = require('./utils/request.js')
    "downloadFile": 10000
   }
   ``` 
-  ## [utils](https://github.com/EastWorld/wechat-app-mall/tree/master/utils)
+  ## [utils](https://github.com/EastWorld/wechat-app-mall/tree/master/utils) 封装的公共模块
   
   # [wepy](https://github.com/Tencent/wepy)
   
