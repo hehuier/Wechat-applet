@@ -71,5 +71,13 @@ const api = require('./utils/request.js')
   
   # [wepy](https://github.com/Tencent/wepy)
   
+  #小程序 小结
+  ## 关于登录
+  >[wx.login]( https://developers.weixin.qq.com/miniprogram/dev/api/api-login.html)
+  >[wx.checkSession](https://developers.weixin.qq.com/miniprogram/dev/api/signature.html#wxchecksessionobject) 校验当前用户session_key是否有效
+  >[wx.authorize](https://developers.weixin.qq.com/miniprogram/dev/api/authorize.html)向用户发起授权申请  
+  >wx.getUserInfo 获取用户基本信息  
+  
+  
 
 
