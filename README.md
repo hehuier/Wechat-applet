@@ -102,7 +102,7 @@ class CanvasKit {
   let drawer = new CanvasKit('canvasId').drawImg(styleObj1).drawText(styleObj2)
   drawer.exportImg()
 ``` 
-** **  小程序中无法绘制网络图片到canvas上，需要通过downLoadFile 先下载图片到本地临时文件才可以绘制
+** 小程序中无法绘制网络图片到canvas上，需要通过downLoadFile 先下载图片到本地临时文件才可以绘制 **
   
   
   
