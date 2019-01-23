@@ -103,8 +103,40 @@ class CanvasKit {
   drawer.exportImg()
 ``` 
 **小程序中无法绘制网络图片到canvas上，需要通过downLoadFile 先下载图片到本地临时文件才可以绘制**
-  
-  
-  
+##[ANIMATE](https://developers.weixin.qq.com/miniprogram/dev/api/wx.createAnimation.html)  
+``` javascipt  
+    onShow: function(){
+      var animaiton = wx.createAnimation({
+        duration: 1000,
+        timingFunction: 'ease',
+      })
+      this.animation = animation
+      animation.scale(2, 2).rotate(45).step()
+      this.setData({
+        animationData:animation.export()
+      })
+    }
+    //////////////////////////////////////////
+	  onReady: function () {
+	    this.animation = wx.createAnimation()
+	  },    
+	  allInQueue: function () {
+	    this.animation.rotate(Math.random() * 720 - 360).step()
+	        .scale(Math.random() * 2).step()
+	        .translate(Math.random() * 100 - 50, Math.random() * 100 - 50).step()
+	        .skew(Math.random() * 90, Math.random() * 90).step()
+	    this.setImmediate(callback, arg1, arg2, arg3);
+	  },
+	  reset: function () {
+	    this.animation.rotate(0, 0)
+	                  .scale(1)
+	                  .translate(0, 0)
+	                  .skew(0, 0)
+	                  .step({duration: 0})
+	    this.setData({animation: this.animation.export()})
+	  }
+``` 
+  .step(): 一组动画完成。 可以在一组动画中调用任意多个动画方法，一组动画中的所有动画会同时开始，一组动画完成后才会会进行下一组动画  
+  .export(): 导出动画队列。export 方法每次调用后会清掉之前的动画操作
 
 
