@@ -77,6 +77,33 @@ const api = require('./utils/request.js')
   >[wx.checkSession](https://developers.weixin.qq.com/miniprogram/dev/api/signature.html#wxchecksessionobject) 校验当前用户session_key是否有效
   >[wx.authorize](https://developers.weixin.qq.com/miniprogram/dev/api/authorize.html)向用户发起授权申请  
   >wx.getUserInfo 获取用户基本信息  
+  ## 生成海报
+  利用[canvas](https://developers.weixin.qq.com/miniprogram/dev/component/canvas.html)绘制海报 ---> canvasToTempFilePath 导出图片 --> wx.saveImageToPhotosAlbum({}）将图片保存在本地相册中
+``` javascipt  
+class CanvasKit {
+    constructor() {
+    }
+    drawImg(option = {}) {
+      ...
+      return this
+    }
+    drawRect(option = {}) {
+      return this
+    }
+    drawText(option = {}) {
+      ...
+      return this
+    }
+    static exportImg(option = {}) {
+      ...
+    }
+  }
+  
+  let drawer = new CanvasKit('canvasId').drawImg(styleObj1).drawText(styleObj2)
+  drawer.exportImg()
+``` 
+** **  小程序中无法绘制网络图片到canvas上，需要通过downLoadFile 先下载图片到本地临时文件才可以绘制
+  
   
   
 
