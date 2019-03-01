@@ -1,0 +1,618 @@
+<template>
+  <view class="wrapper indexPage">
+    <view class="page-content">
+      <view class="index-header">
+        <image src="../images/logo.png" class="logo"></image>
+        <navigator class="exchange-rate-nav" url="./exchangeRate" hover-class="none">
+          <image src="../images/rate-icon.png" class="rate-icon"></image>
+        </navigator> 
+        <navigator class="collect-nav" url="./collect" hover-class="none">
+          <image src="../images/collect-icon.png" class="collect-icon"></image>
+        </navigator>                 
+        <text class="weather">{{weather}}</text>       
+      </view>
+      <view class="focus-video">
+        <video id="myVideo" wx:if="{{videoUrl}}" src="{{videoUrl}}" objectFit='fill' loop="{{true}}" autoplay="{{true}}" controls="{{false}}" objectFit="cover" bindended="videoEndEvent">
+          <cover-view class="video-cover">
+            <cover-image  src="../images/video-cover.png"></cover-image>
+          </cover-view>          
+        </video>
+        <view class="imgBox" wx:else>
+          <image class="videoImg"  src="{{videoImg}}" mode="scaleToFill"></image>
+          <image class="imgCover" src="../images/video-cover.png" mode="scaleToFill"></image>
+        </view>
+        <view class="videoTh">
+          <text class="tit">马丘比丘</text>
+          <text class="con">秘鲁古老遗迹中的一颗璀璨明珠</text>
+        </view>
+      </view>
+      <view class="search pad-50">
+        <view class="search-inner">
+          <input 
+            class="input"
+            confirm-type="搜索"
+            bindinput="oninput"
+            placeholder="圣谷"
+            bindconfirm="searchBtn"
+            focus="{{focus}}"/>
+            <image class="icon" src="../images/icon_search_blank1.png" bindtap="searchBtn"></image>          
+        </view>
+      </view>
+      <view class="menu-nav-wrap pad-50">
+        <view class="menu-nav border-b-line">
+          <view class="navFew" wx:if="{{navData.length<5}}">
+            <repeat for="{{navData}}" key="index" index="index" item="item" wx:if="{{navData.length<5}}">
+              <navigator class="btn" url="./limaMap?region_id=5&cateId={{item.id}}&keyword={{focus}}" hover-class="none">
+                <image src="{{item.img}}" class="icon"/>
+                <text class="menu-item">{{item.name}}</text>  
+              </navigator>
+            </repeat>                
+          </view>
+          <swiper indicator-dots="{{false}}" duration="{{500}}" display-multiple-items="4" wx:else>
+            <block wx:for="{{navData}}">
+              <swiper-item>
+                <navigator class="btn" url="./limaMap?region_id=5&cateId={{item.id}}&keyword={{focus}}" hover-class="none">
+                  <image src="{{item.img}}" class="icon"/>
+                  <text class="menu-item">{{item.name}}</text>  
+                </navigator>                
+              </swiper-item>
+            </block>
+          </swiper>
+          <view class="goLinkMap">
+            <view class="goLinkMapInner">
+              <image src="../images/map-cover.jpg" mode="widthFix"></image>
+              <navigator class="goLinkBtn" url="./limaMap?region_id=6&cateId=&keyword=" hover-class="none">
+                <text>一键浏览马丘比丘</text><image src="../images/arrow-btn.png"></image>
+              </navigator>              
+            </view>
+            <text class="cityIntro">马丘比丘遗址 (Machu Picchu Historical Sanctuary) 占地超过32,592公顷，随处可见精致的印加建筑美景以及多样化的...</text>
+          </view>          
+        </view>
+      </view>
+      <view class="travel-tips-wrap {{tipsData.length>0?'show':'hide'}} pad-50">
+          <view class="travel-tips border-b-line">
+            <view class="travel-th">
+              <text class="title">旅游贴士</text>
+            </view>
+            <view class="tips-list">
+              <repeat for="{{tipsData}}" key="index" index="index" item="item">
+                <navigator class="tips-item" url="./preferDetail?id={{item.id}}" hover-class="none">
+                  <view class="item-con">
+                    <image class="item-img" src="{{item.hot_img}}" mode="aspectFill"></image>
+<!--                     <view class="cover">
+                <image class="" src="../images/1.png" class="cover-img"></image>
+                <text class="cover-txt">{{item.name}}</text>  
+              </view>     -->              
+                  </view>
+                </navigator>                
+              </repeat>                
+            </view>
+          </view>
+      </view>
+      <view class="travel-itinerary {{itineraryData.length>0?'show':'hide'}}">
+        <view class="travel-th">
+          <text class="title">旅游行程</text>
+        </view>
+        <swiper interval="5000" duration="500" previous-margin="50rpx" next-margin="40rpx" current="{{swiperIndex}}" class="itinerary-swiper">
+          <block wx:for="{{itineraryData}}" wx:for-item="item">  
+            <swiper-item class="slider">
+              <navigator url="./tripLine?itinerId={{item.id}}" hover-class="none">
+                <!-- <text class="sub-tit">经典线路游</text> -->
+                <text class="tit">{{item.title}}</text>
+                <image src="{{item.cover_image}}" class="slide-image img-bg-loading" mode="aspectFill"/>                
+              </navigator>
+            </swiper-item>
+          </block>
+        </swiper>
+      </view>
+      <view class="travel-recommend pad-50 {{recommendData.length>0? 'show': 'hide'}}">
+          <view class="travel-th">
+            <text class="title">精彩内容</text>
+            <navigator class="view-all" url="./recommendList" hover-class="none">
+              <text class="menu-item">查看全部</text>  
+            </navigator>
+          </view>
+          <view class="recommend-list">
+            <repeat for="{{recommendData}}" key="index" index="index" item="item">
+              <recommendItem :item="item"/>
+            </repeat>       
+          </view>     
+      </view>
+    </view>
+    <view class="official-account">
+      <official-account></official-account>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+  import RecommendItem from '../components/recommendItem'
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '库斯科旅行指南'
+    }
+    components = {
+      recommendItem: RecommendItem
+    }
+    data = {
+      weather: '',
+      videoUrl: '',
+      videoImg: '',
+      focus: '',
+      defaultCateId: 0,
+      navData: [],
+      tipsData: [],
+      swiperIndex: 0,
+      itineraryData: [],
+      showItinerary: false,
+      recommendData: []
+    }
+    videoEndEvent () {
+      console.log(111111)
+    }
+    oninput (e) {
+      this.focus = e.detail.value
+    }
+    searchBtn () {
+      if (this.focus !== '') {
+        wx.navigateTo({
+          url: 'limaMap?region_id=5&cateId=&keyword=' + this.focus,
+          success: function () {},
+          fail: function () {},
+          complete: function () {}
+        })
+      }
+    }
+    getWeatherData () {
+      let self = this
+      wx.request({
+        url: api.weather.url + '&location=库斯科',
+        method: api.weather.method,
+        success: function (res) {
+          var weather = res.data.HeWeather6[0].daily_forecast[1].cond_txt_d
+          var temp = res.data.HeWeather6[0].daily_forecast[1].tmp_min + '/' + res.data.HeWeather6[0].daily_forecast[1].tmp_max + '℃'
+          self.weather = weather + ' ' + temp
+          self.$apply()
+        }
+      })
+    }
+    getVideoUrl () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.video.url + '&id=77',
+        method: api.video.method,
+        success: function (res) {
+          wepy.hideLoading()
+          if (res.data.intro) {
+            self.videoUrl = res.data.intro
+          } else {
+            self.videoImg = res.data.hot_img
+          }
+          self.$apply()
+        }
+      })
+    }
+    setAllCategoriesData () {
+      let self = this
+      let liveData = wepy.getStorageSync('live')
+      if (liveData) {
+        self.navData = liveData
+      } else {
+        request({
+          url: api.live.url,
+          success: function (res) {
+            function compare (property) {
+              return function (obj1, obj2) {
+                var value1 = obj1[property]
+                var value2 = obj2[property]
+                return value2 - value1
+              }
+            }
+            var sortCategories = res.data.sort(compare('sort'))
+            self.navData = sortCategories
+          }
+        })
+      }
+    }
+    getTipsData () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.cate.url + '&page=1',
+        method: api.cate.method,
+        success: function (res) {
+          wepy.hideLoading()
+          self.tipsData = res.data.data
+          self.$apply()
+        }
+      })
+    }
+    getItineraryData () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.alltrip.url,
+        method: api.alltrip.method,
+        success: function (res) {
+          wepy.hideLoading()
+          self.itineraryData = res.data.data
+          if (self.itineraryData && self.itineraryData.length > 2) {
+            self.swiperIndex = 1
+          }
+          self.$apply()
+        }
+      })
+    }
+    getRecommendData () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.hot.url + '&page=1&pagesize=5',
+        method: api.hot.method,
+        success: function (res) {
+          wepy.hideLoading()
+          self.recommendData = res.data.data
+          self.$apply()
+        }
+      })
+    }
+    onLoad () {
+      this.getWeatherData()
+      this.getVideoUrl()
+      this.setAllCategoriesData()
+      this.getTipsData()
+      this.getItineraryData()
+      this.getRecommendData()
+    }
+    /**
+     * 用户点击右上角分享
+     */
+    onShareAppMessage (res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '库斯科旅游',
+        path: 'pages/index',
+        imageUrl: '../images/shareUrl.jpg',
+        success: function (res) {
+          // 转发成功
+        },
+        fail: function (res) {
+          // 转发失败
+        }
+      }
+    }
+  }
+</script>
+
+<style lang="less">
+  .index-page{
+    overflow:hidden;
+    background-color:#fff;
+  }
+  .pad-50{
+    padding:0 50rpx;
+  }
+  .border-b-line{
+    border-bottom: 1px solid #999;
+  }
+  .wrapper{
+    height: auto;
+    position: relative; 
+    .page-content{
+      padding-bottom: 50rpx;
+    }
+    .travel-th{
+      overflow: hidden;
+      padding:60rpx 0 22rpx;
+      .title{
+        font-size: 48rpx;
+        float: left;
+        line-height: 1;
+      }
+      .view-all{
+        float: right;
+        font-size: 32rpx;
+        color: #880063;
+      }
+    }
+
+    .index-header{
+      padding:26rpx 40rpx 34rpx;
+      height: 110rpx;
+      .logo{
+        width: 148rpx;
+        height: 110rpx;
+      }
+      .weather{
+        float: right;
+        font-size: 24rpx;
+        padding-right: 50rpx;
+        line-height: 110rpx;        
+      }
+      .collect-nav{
+        float: right;
+        padding-right: 20rpx;
+        margin-top: 27rpx;
+        .collect-icon{
+          width: 44rpx;
+          height: 56rpx;
+        }
+      }
+      .exchange-rate-nav{
+        float: right;
+        padding-left: 20rpx;
+        margin-top: 27rpx;
+        .rate-icon{
+          width: 44rpx;
+          height: 56rpx;
+        }
+      }
+    } 
+
+    .focus-video{
+      position: relative;
+      padding-bottom: 130rpx;
+      background-color:#880063;
+      #myVideo{
+        width: 100%;
+       /*  height: 625rpx; */
+      }
+      .videoImg{
+        width: 100%;
+        height: 620rpx;
+      }
+      .video-cover{
+        width: 100%;
+        position: absolute;
+        left:0;
+        right:0;
+        bottom: 0;
+      }
+      .imgBox{
+        position: relative;
+        .imgCover{
+          width: 100%;
+          height: 120rpx;
+          position: absolute;
+          left:0;
+          right:0;
+          bottom:0;
+        }
+      } 
+      .videoTh{
+        width: 100%;
+        height: 130rpx;
+        padding:0 50rpx;
+        box-sizing: border-box;
+        position: absolute;
+        left:0;
+        right: 0;
+        bottom: 0;
+        color: #fff;
+        .tit{
+          font-size: 48rpx;
+          font-weight: bold;
+          display: block;
+        }
+        .con{
+          font-size: 28rpx;
+        }
+      }
+    }
+
+    .search{
+      margin:50rpx 0 70rpx;
+    }
+    .search-inner{
+      border: 1px solid #000;
+      position: relative;
+      .icon{
+        width: 44rpx;
+        height: 44rpx;
+        position: absolute;
+        right: 20rpx;
+        top: 17rpx;
+      }
+      input{
+        line-height: 78rpx;
+        height: 78rpx;
+        padding:0 70rpx 0 20rpx;
+        font-size: 32rpx;
+      }
+    }
+
+    .menu-nav{
+      width: 100%;
+      overflow: hidden;
+      padding-bottom: 46rpx;
+      display: flex;
+      display: -webkit-flex;
+      flex-direction:column;           
+      .navFew{
+        width: 100%;
+        display: flex;
+        display: -webkit-flex; 
+      }
+      .btn{
+/*         width: 120rpx;
+margin-right: 50rpx; */
+        flex: 1;
+        -webkit-flex: 1;
+        text-align: center;
+        .icon{
+          width: 120rpx;
+          height: 120rpx;        
+        }
+        .menu-item{
+          font-size: 32rpx;
+          line-height: 50rpx;
+          margin:16rpx 0;
+          display: block;
+        }
+        &:nth-child(4n){
+          margin-right: 0;
+        }
+      }
+      swiper{
+        width: 100%;
+        height: 210rpx;
+        swiper-item{
+          width: 120rpx;
+        }
+      }
+      .goLinkMap{
+        width: 100%;
+        margin:32rpx 0 24rpx;
+        .goLinkMapInner{
+          position: relative;
+          &>image{
+            width: 100%;
+          }          
+        }
+        .goLinkBtn{
+          width: 400rpx;
+          height: 100rpx;
+          background-color: pink;
+          position: absolute;
+          left:50%;
+          top:50%;
+          margin: -50rpx 0 0 -200rpx;
+          background-color: #880063;
+          text-align: center;
+          text{
+            font-size: 32rpx;
+            color: #fff;
+            line-height: 100rpx;
+          }
+          image{
+            width: 54rpx;
+            height: 54rpx;
+            margin-left:20rpx;
+            vertical-align: middle;
+          }
+        }
+        .cityIntro{
+          font-size: 24rpx;
+          color: #666;
+          line-height: 36rpx;
+
+        }
+      }
+    }
+
+    .tips-list{
+      width: 100%;
+      overflow: hidden;
+      margin-top: 15rpx;
+      .tips-item{
+        width: 50%;
+        float: left;
+        height: 280rpx;
+        padding-right: 5rpx;
+        box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        overflow: hidden;
+        margin-bottom: 60rpx;
+        border-radius: 8px;
+        &:nth-child(2n){
+          padding-right: 0;
+          padding-left: 5rpx;
+        }
+        .item-con{
+          width: 100%;
+          height: 100%;  
+          position: relative; 
+          .item-img{
+            width: 100%;
+            height: 100%;
+          }   
+          .cover{
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,.4);
+            position: absolute;
+            left:0;
+            right: 0;
+            bottom: 0;
+            .cover-img{
+              width: 78rpx;
+              height: 69rpx;
+              display: block;
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              margin-left: -39rpx;
+              margin-top:-65rpx;
+            }
+            .cover-txt{
+              text-align: center;
+              colot: #fff;
+              width: 100%;
+              position: absolute;
+              left:0;
+              top: 50%;
+              font-weight: bold;
+              color: #fff;
+              margin-top: 30rpx;
+            }
+          }             
+        }
+      }
+    }
+
+    .travel-itinerary{
+      margin-bottom: 80rpx;
+      .travel-th{
+        padding-left: 50rpx;
+        padding-right: 50rpx;
+      }
+    }
+    .itinerary-swiper{
+      height: 480rpx;
+      .slider{
+        padding-top: 10rpx;
+        padding-right: 10rpx;
+        box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        .sub-tit{
+          font-size: 24rpx;
+          display: block;
+        }
+        .tit{
+          font-size: 32rpx;
+        }
+        .slide-image{
+          width: 100%;
+          height: 365rpx;
+          border-radius: 8rpx;
+          overflow: hidden;
+          display: block;
+          margin-top: 35rpx;
+        }
+      }
+    }
+
+    .recommend-list {
+      box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      width: 100%;
+      height: auto;
+      overflow: hidden;
+      margin-top: 15rpx;
+    }
+  }
+</style>

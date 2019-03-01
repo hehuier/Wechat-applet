@@ -1,0 +1,98 @@
+<template>
+  <view class="item">
+    <navigator
+      url="./findDetail?place_id={{item.place_id}}">
+      <image class="img img-bg-loading" mode="aspectFill" src="{{item.img}}"></image>
+      <view class="cover">
+        <image class="icon" mode="aspectFill" src="../images/icon_address2.png"></image>
+        <text class="title">{{item.title}}</text>
+      </view>
+    </navigator>
+    <button class="delete-btn" @tap="deleteBtnTap({{item.id}})">
+      <image class="icon-close" src="../images/icon_close.png"></image>
+    </button>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  export default class CollectItem extends wepy.component {
+    props = {
+    }
+    methods = {
+      deleteBtnTap (id) {
+        var self = this
+        wepy.showModal({
+          title: '确定删除此行程吗？',
+          success: function (res) {
+            if (res.confirm) {
+              self.$emit('delete', id)
+            } else if (res.cancel) {
+            }
+          }
+        })
+      }
+    }
+  }
+</script>
+<style lang="less">
+.item{
+  width:100%;
+  display:flex;
+  flex-direction:row;
+  align-items:flex-start;
+  justify-content:flex-start;
+  font-size:0;
+  line-height:0;
+  position:relative;
+  margin-bottom:15rpx;
+  border-radius:10rpx;
+  overflow:hidden;
+  .img{
+    width:690rpx;
+    height:340rpx;
+  }
+  .cover{
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100%;
+    box-sizing:border-box;
+    padding:20rpx 40rpx;
+    background:linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    flex-direction:row;
+    .title{
+      flex:1;
+      line-height:68rpx;
+      font-size:28rpx;
+      color:#fff;
+    }
+    .icon{
+      width:27rpx;
+      height:34rpx;
+      margin-right:10rpx;
+    }
+  }
+  .delete-btn{
+    position:absolute;
+    top:15rpx;
+    right:15rpx;
+    padding:14rpx;
+    border-radius:50%;
+    overflow:hidden;
+    background-color:#000;
+    line-height:1;
+    font-size:0;
+    box-sizing:border-box;
+    &::after{
+      display:none;
+    }
+    .icon-close{
+      width:16rpx;
+      height:16rpx;
+    }
+  }
+}
+</style>

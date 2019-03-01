@@ -1,0 +1,71 @@
+<template>
+  <view class="unData {{type}}" wx-if="{{show}}">
+    <view class="unData-inner">
+      <view class="empty-icon"><image src="../images/empty.png" alt=""></image></view>
+      <text>{{text}}</text>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+
+  export default class unData extends wepy.component {
+    props = {
+      show: {
+        type: Boolean,
+        default: false
+      },
+      text: {
+        type: String,
+        default: '暂无内容'
+      },
+      type: String
+    }
+    methods = {
+      show () {
+        this.show = true
+      },
+      hide () {
+        this.show = false
+      }
+    }
+  }
+</script>
+<style lang="less">
+.unData{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex:1;
+  text-align:center;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  color:#333;
+  box-sizing:border-box;
+  .unData-inner{
+    padding-bottom:248rpx;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  &.row{
+    padding:20rpx 0;
+    .empty-icon{display:none}
+    .unData-inner{
+      padding-bottom:0;
+    }
+  }
+}
+.empty-icon{
+  width:300rpx;
+  height:248rpx;
+  margin-bottom:20rpx;
+}
+.empty-icon image{
+  width:300rpx;
+  height:248rpx;
+}
+</style>

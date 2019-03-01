@@ -1,0 +1,201 @@
+<template>
+  <view class="container map-page">
+    <map id="map"
+      latitude="{{latitude}}"
+      longitude="{{longitude}}"
+      scale="{{scale}}"
+      markers="{{markers}}"
+      bindmarkertap="markertap"
+      show-location="true">
+    </map>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+
+  export default class Search extends wepy.page {
+    config = {
+      navigationBarTitleText: ''
+    }
+    data = {
+      mapOpenPage: false,
+      siglePointMap: false,
+      mapCoverShow: false,
+      mapidType: 'place_id',
+      place_id: '',
+      ukey: '',
+      placesData: [],
+      coverData: '',
+      latitude: '',
+      longitude: '',
+      scale: 16,
+      markers: [],
+      setMapCenter: false
+    }
+    markertap(e) {
+      var markerId = parseInt(e.markerId)
+      if (!this.siglePointMap) {
+        this.coverData = this.placesData[0]
+      } else {
+        this.coverData = this.placesData[markerId]
+        this.markers.forEach((row, key) => {
+          row.iconPath = '/images/icon_position_bule.png'
+          if (key === markerId) {
+            row.iconPath = '/images/icon_position_red.png'
+          } else {
+            row.iconPath = '/images/icon_position_bule.png'
+          }
+        })
+      }
+    }
+    getTripData () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.triplist.url + '&ukey=' + self.ukey,
+        method: api.triplist.method,
+        success: function (res) {
+          wepy.hideLoading()
+          var markers = []
+          console.log(res, 222)
+          res.data.forEach((row, key) => {
+            if (parseInt(row.latitude) !== 0 && parseInt(row.longitude) !== 0) {
+              var placeTit = row.title + '\n\n'
+              var placeIntro = row.intro
+              if (placeIntro.length > 47) {
+                placeIntro = row.intro.substr(0, 47)
+              }
+              var sIntro = ''
+              var aIntro = []
+              for (var i = 0; i < placeIntro.length; i++) {
+                if (i % 12 === 0 && i !== 0) {
+                  aIntro.push(placeIntro[i])
+                  aIntro.push('\n')
+                } else {
+                  aIntro.push(placeIntro[i])
+                }
+              }
+              sIntro = aIntro.join('')
+              var placeContent = placeTit + sIntro + '……'
+              var mark = {
+                iconPath: '/images/icon_position_bule.png',
+                id: key,
+                latitude: row.latitude,
+                longitude: row.longitude,
+                width: 26,
+                height: 35,
+                callout: {
+                  content: placeContent,
+                  color: '#000000',
+                  fontSize: '14',
+                  bgColor: '#ffffff',
+                  padding: '20',
+                  display: 'BYCLICK'
+                }
+              }
+              markers.push(mark)
+              if (!self.setMapCenter) {
+                self.longitude = row.longitude
+                self.latitude = row.latitude
+                self.setMapCenter = true
+              }
+            }
+          })
+          self.markers = markers
+          self.placesData = res.data
+          self.$apply()
+        }
+      })
+    }
+    getData () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.place.url + '&place_id=' + self.place_id + '&ukey=' + self.ukey,
+        method: api.place.method,
+        success: function (res) {
+          console.warn('placeDetail', res)
+          var data = res.data
+          self.spotDetail = data
+          wepy.hideNavigationBarLoading()
+          wepy.setNavigationBarTitle({title: data.title})
+          self.placesData.push(data)
+          var placeTit = data.title + '\n\n'
+          var placeIntro = data.intro
+          if (placeIntro.length > 47) {
+            placeIntro = data.intro.substr(0, 47)
+          }
+          var sIntro = ''
+          var aIntro = []
+          for (var i = 0; i < placeIntro.length; i++) {
+            if (i % 12 === 0 && i !== 0) {
+              aIntro.push(placeIntro[i])
+              aIntro.push('\n')
+            } else {
+              aIntro.push(placeIntro[i])
+            }
+          }
+          sIntro = aIntro.join('')
+          var placeContent = placeTit + sIntro + '……'
+          self.markers = []
+          var mark = {
+            iconPath: '/images/icon_position_red.png',
+            id: 0,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            width: 26,
+            height: 35,
+            callout: {
+              content: placeContent,
+              color: '#000000',
+              fontSize: '14',
+              bgColor: '#ffffff',
+              padding: '20',
+              display: 'BYCLICK'
+            }
+          }
+          self.longitude = data.longitude
+          self.latitude = data.latitude
+          self.markers.push(mark)
+          wepy.hideLoading()
+          self.$apply()
+        }
+      })
+    }
+    onLoad(options) {
+      this.ukey = options.ukey
+      this.coverData = ''
+      this.placesData = []
+      if (options.mapType === 'collect') {
+        wepy.hideNavigationBarLoading()
+        wepy.setNavigationBarTitle({title: '行程地图'})
+        this.siglePointMap = true
+        this.getTripData()
+      } else {
+        wepy.showNavigationBarLoading()
+        this.place_id = options.place_id
+        this.getData()
+      }
+    }
+    onUnload () {
+    }
+  }
+</script>
+<style lang="less">
+.map-page{
+  width:100%;
+  height:100%;
+  background-color:#f5f5f5;
+}
+#map{
+  width:100%;
+  height:100%;
+}
+</style>

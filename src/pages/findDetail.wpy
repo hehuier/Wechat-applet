@@ -1,0 +1,748 @@
+<template>
+<view class="container detail-page {{showShare || maskHidden ?'un-scroll':''}}">
+  <import src="../wxParse/wxParse.wxml"/>
+  <view class="banner-area">
+    <swiper
+      class="swiper img-bg-loading"
+      indicator-dots="{{indicatorDots}}"
+      indicator-color="rgba(255,255,255,0.7)"
+      indicator-active-color="#ffffff"
+      duration="500">
+      <block wx:for="{{detailData.gallery}}" wx:key>
+        <swiper-item>
+          <image src="{{item}}" class="slide-image img-bg-loading"/>
+          <view class="cover">
+            <text>{{detailData.title}}</text>
+          </view>
+        </swiper-item>
+      </block>
+    </swiper>
+    <view class="btn-group">
+      <button class="btn bnt-colect" @tap="cellect({{collected}}, {{schedule_id}})">
+        <image src="../images/{{collected?'icon_heart':'icon_heart_add'}}.png"></image>
+      </button>
+      <button class="btn bnt-share" bindtap='showShareBox'><image src="../images/icon_share_white.png"></image></button>
+    </view>
+  </view>
+  <view class="detail-area area" wx:if="{{detailData.intro}}">
+    <!-- <view class="area-title"><text class="title">详情介绍</text></view> -->
+    <view class="area-content">
+      <text class="text">{{detailData.intro}}</text>
+    </view>
+  </view>  
+  <view class="spot-info" wx:if="{{detailData.open_hours || detailData.contacts || detailData.location}}">
+    <view class="spot-info-inner">
+      <view class="info-row" wx:if="{{detailData.contacts}}">
+        <view class="icon-box"><image class="icon" src="../images/icon_phone.png"></image><text> 电话</text></view>
+        <view class="text-box phone-box"><button @tap="makePhoneCall({{detailData.contacts}})" plain="true">{{detailData.contacts}}</button></view>
+      </view>
+      <view class="info-row" wx:if="{{detailData.location}}">
+        <view class="icon-box"><image class="icon" src="../images/icon_address.png"></image><text> 地址</text></view>
+        <navigator
+        hover-class="none"
+          wx:if="{{show_maplink}}"
+          class="address-btn"
+          url="./map?place_id={{place_id}}&ukey={{ukey}}">
+          <text>{{detailData.location}}</text>
+        </navigator>        
+        <view wx:if="{{!show_maplink}}" class="address-text">
+          <text>{{detailData.location}}</text>
+        </view>
+      </view>    
+      <view class="info-row" wx:if="{{detailData.open_hours}}">
+        <view class="icon-box"><image class="icon" src="../images/icon_clock.png"></image><text> 营业时间</text></view>
+        <view class="text-box"><text>{{detailData.open_hours}}</text></view>
+      </view>    
+    </view>
+  </view>
+  <view class="tip-area area" wx:if="{{detailData.content}}">
+   <!--  <view class="area-title"><text class="title">相关贴士</text></view> -->
+    <view class="area-content tip-content">
+      <!-- <rich-text class="tip-text" nodes="{{aboutTip}}"></rich-text> -->
+      <template is="wxParse" class="tip-text" data="{{wxParseData:article.nodes}}"/>
+    </view>
+  </view>
+  <view class="discount-area area" wx:if="{{couponData.length>0}}">
+    <view class="area-title"><text class="title">相关优惠</text></view>
+    <view class="area-content">
+      <repeat for="{{couponData}}" key="index" index="index" item="item">
+        <voucherItem :item="item"/>
+      </repeat>
+    </view>
+  </view>
+<!--   <view class="preferred-area area" wx:if="{{preferData.length>0}}">
+  <view class="area-title"><text class="title">相关推荐</text></view>
+  <view class="area-content">
+    <repeat for="{{preferData}}" key="index" index="index" item="item">
+      <preferItem :item="item"/>
+    </repeat>
+  </view>
+</view> -->
+  <view class="shareCover {{showShare?'showShare':''}}">
+    <view class="shareBox">
+      <view class="share-t">
+        <view class="shareItem">
+          <button open-type="share"><image src="../images/wechart-icon.png" class='img'></image></button>
+          <text>分享到微信</text>        
+        </view>
+        <view class="shareItem">
+          <button bindtap='formSubmit'><image src="../images/friend-icon.png" class='img'></image></button>
+          <text>生成海报分享到朋友圈</text>              
+        </view>
+      </view>
+      <view class="share-ft" @tap="hideShareBox">
+        <text>取消</text>
+      </view>
+    </view>    
+  </view>
+  <view class="posterBox" hidden="{{maskHidden == false}}">
+    <image src="{{poster.imgUrl}}" class='poster' mode="widthFix"></image>
+    <button class="saveImg {{disabledSaveBtn?'':'disabledBtn'}}" bindtap='saveImg'>{{poster.btnTxt}}</button>
+    <button class='closePoster' bindtap='closePosterBox'><image src="../images/close.png"></image></button>
+  </view>
+</view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+  import PreferItem from '../components/facilityDetail/preferItem'
+  import VoucherItem from '../components/facilityDetail/voucherItem'
+  let WxParse = require('../wxParse/wxParse.js')
+
+  export default class FindDetail extends wepy.page {
+    config = {
+      navigationBarTitleText: ''
+    }
+    components = {
+      voucherItem: VoucherItem,
+      preferItem: PreferItem
+    }
+    data = {
+      curShops: '',
+      place_id: '',
+      ukey: '',
+      collected: false,
+      schedule_id: '',
+      detailData: [],
+      aboutTip: [],
+      couponData: [],
+      preferData: [],
+      indicatorDots: false,
+      show_maplink: false,
+      showShare: false,
+      maskHidden: false,
+      disabledSaveBtn: true,
+      poster: {
+        imgUrl: '',
+        btnTxt: '保存相册，分享到朋友圈'
+      },
+      shareImg: ''
+    }
+    events = {
+      // 领取优惠券
+      'receive': (id) => {
+        let self = this
+        request({
+          url: api.addcoupon.url + '&coupon_id=' + id + '&ukey=' + self.ukey + '&place_id=' + self.place_id + '&place_title=' + encodeURI(self.detailData.title),
+          method: api.addcoupon.method,
+          success: function (res) {
+            console.warn('addcoupon', res)
+            if (res.data.success) {
+              self.getRelations()
+              wepy.showToast({
+                title: '领取成功',
+                icon: 'success',
+                duration: 1000
+              })
+            } else {
+              wepy.showToast({
+                title: '领取失败',
+                duration: 1000
+              })
+            }
+          }
+        })
+      }
+    }
+    methods = {
+      // 拨打电话
+      makePhoneCall (phone) {
+        wepy.makePhoneCall({
+          phoneNumber: phone
+        })
+      },
+      cellect (cellected, id) {
+        cellected ? this.cancelCellect(id) : this.addCellect()
+      }
+    }
+    addCellect () {
+      let self = this
+      request({
+        url: api.addtrip.url + '&place_id=' + self.place_id + '&ukey=' + self.ukey,
+        method: api.addtrip.method,
+        success: function (res) {
+          if (res.data.success) {
+            wepy.showToast({
+              title: '收藏成功',
+              icon: 'success',
+              duration: 1000
+            })
+            self.schedule_id = res.data.schedule_id
+            self.collected = true
+            self.$apply()
+          } else {
+            wepy.showToast({
+              title: '收藏失败',
+              duration: 1000
+            })
+          }
+        }
+      })
+    }
+    cancelCellect (id) {
+      let self = this
+      request({
+        url: api.deletetrip.url + '&schedule_id=' + id + '&ukey=' + self.ukey + '&status=2',
+        method: api.deletetrip.method,
+        success: function (res) {
+          if (res.data.success) {
+            self.collected = false
+            self.schedule_id = ''
+            self.$apply()
+            wepy.showToast({
+              title: '取消收藏',
+              icon: 'success',
+              duration: 1000
+            })
+          } else {
+            wepy.showToast({
+              title: '取消失败',
+              duration: 1000
+            })
+          }
+        }
+      })
+    }
+    getData () {
+      let self = this
+      console.log('getData', self.ukey)
+      wepy.showLoading({
+        title: '加载中',
+        mask: true
+      })
+      request({
+        url: api.place.url + '&place_id=' + self.place_id + '&ukey=' + self.ukey,
+        success: function (res) {
+          self.detailData = res.data
+          if (self.detailData.gallery !== '' && self.detailData.gallery.length !== 0) {
+            self.shareImg = self.detailData.gallery[0]
+          } else {
+            self.shareImg = '../images/loadImg.jpg'
+          }
+          if (parseInt(self.detailData.latitude) !== 0 && parseInt(self.detailData.latitude) !== 0) {
+            self.show_maplink = true
+          } else {
+            self.show_maplink = false
+          }
+          self.indicatorDots = res.data.gallery.length > 1
+          wepy.hideNavigationBarLoading()
+          wepy.setNavigationBarTitle({title: self.detailData.title})
+          if (self.detailData.title) {
+            wepy.reportAnalytics('shop_views', {
+              shop_name: self.detailData.title
+            })
+          }
+          self.aboutTip = unescape(self.detailData.content)
+          WxParse.wxParse('article', 'html', self.aboutTip, self, 5)
+          self.collected = self.detailData.is_collect
+          self.schedule_id = self.detailData.schedule_id
+          wepy.hideLoading()
+          self.$apply()
+        }
+      })
+    }
+    getRelations () {
+      let self = this
+      console.log('getRelations', self.ukey)
+      request({
+        url: api.relations.url + '&place_id=' + self.place_id + '&ukey=' + self.ukey,
+        method: api.relations.method,
+        success: function (res) {
+          console.warn('couponData', res)
+          self.couponData = res.data.coupons
+          self.preferData = res.data.articles
+          self.$apply()
+        }
+      })
+    }
+    showShareBox () {
+      this.showShare = true
+    }
+    hideShareBox () {
+      this.showShare = false
+    }
+    formSubmit () {
+      var self = this
+      wepy.showLoading({
+        title: '海报生成中',
+        mask: true
+      })
+      request({
+        url: api.createPoster.url + '&place_id=' + self.place_id,
+        success: function (res) {
+          wepy.hideLoading()
+          if (res.data.code === 200) {
+            self.poster.imgUrl = res.data.url
+            self.maskHidden = true
+            self.showShare = false
+            self.$apply()
+          }
+        }
+      })
+    }
+    saveImg () {
+      var self = this
+      if (self.disabledSaveBtn === false) return
+      wepy.showLoading({
+        title: '海报保存中...'
+      })
+      wx.downloadFile({
+        url: self.poster.imgUrl,
+        success (res) {
+          wepy.hideLoading()
+          if (res.statusCode === 200) {
+            wx.saveImageToPhotosAlbum({
+              filePath: res.tempFilePath,
+              success (dataRes) {
+                self.disabledSaveBtn = false
+                self.poster.btnTxt = '图片已保存到相册，赶紧晒一下吧~'
+                self.$apply()
+              },
+              fail (dataRes) {
+                console.log('下载图片失败')
+              }
+            })
+          }
+        }
+      })
+    }
+    closePosterBox () {
+      wepy.hideLoading()
+      this.maskHidden = false
+    }
+    onLoad (options) {
+      let self = this
+      wepy.showNavigationBarLoading()
+      this.place_id = options.place_id
+      wepy.getStorage({
+        key: 'ukey',
+        success: function (res) {
+          self.ukey = res.data
+          self.$apply()
+          self.getData()
+          self.getRelations()
+        },
+        fail: function (res) {
+          self.authorization = true
+        }
+      })
+    }
+    /**
+     * 用户点击右上角分享
+     */
+    onShareAppMessage (res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: this.detailData.title,
+        path: 'pages/facilityDetail?place_id=' + this.place_id,
+        imageUrl: this.shareImg,
+        success: function (res) {
+          // 转发成功
+        },
+        fail: function (res) {
+          // 转发失败
+        }
+      }
+    }
+  }
+</script>
+<style lang="less">
+@import "../wxParse/wxParse.wxss";
+/* pages/facilities/detail/index.wxss */
+
+/*景点设施详情页*/
+.detail-page{
+  height:auto;
+  min-height:100%;
+  padding-bottom:20rpx;
+  position: relative;
+  overflow: hidden;
+}
+.area{
+  width:100%;
+  padding:0 50rpx;
+  box-sizing: border-box;
+  .area-title{
+    width:100%;
+    box-sizing:border-box;
+    padding:70rpx 0 0 0;
+    .title{
+      font-weight:bold;
+      font-size:48rpx;
+      line-height:1;
+    }
+  }
+  .area-content{
+    width:100%;
+    box-sizing:border-box;
+    padding:40rpx 0;
+    background-color:#fff;
+    position:relative;
+    border-bottom:2rpx solid #ebebeb;
+  }
+  &:last-child{
+    .area-content{
+      border-bottom: none;
+    }
+  }
+}
+
+/*头图*/
+.banner-area{
+  width:100%;
+  position:relative;
+  .swiper{
+    width:100%;
+    height:480rpx;
+    .slide-image{
+      width:100%;
+      height:480rpx;
+    }
+    .cover{
+      position:absolute;
+      bottom:0;
+      left:0;
+      width:100%;
+      box-sizing:border-box;
+      padding:50rpx;
+      background:linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+      line-height:1.2;
+      font-size: 48rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      text{
+        font-size:36rpx;
+        color:#fff;
+      }
+    }
+  }
+  .btn-group{
+    position:absolute;
+    top:28rpx;
+    right:30rpx;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-end;
+    .btn{
+      padding:16rpx;
+      border:0;
+      border-radius:50%;
+      font-size:0;
+      line-height:0;
+      margin-left:16rpx;
+      background-color:#09afe6;
+      &::after{
+        display:none;
+      }
+      &.bnt-colect{
+        background-color:#e2231a;
+      }
+      &.bnt-share{
+        background-color:#fec524;
+      }
+      image{
+        width:37rpx;
+        height:37rpx;
+      }
+    }
+  }
+}
+
+/*景点信息*/
+.spot-info{
+  width:100%;
+  box-sizing:border-box;
+  padding:40rpx 50rpx 15rpx;
+  background-color:#fff;
+  .spot-info-inner{
+    border-bottom:2rpx solid #ebebeb;
+  }
+  .info-row{
+    line-height:30rpx;
+    margin-bottom:50rpx;
+    overflow:hidden;
+    &:nth-child(2){
+      margin-bottom: 20rpx;
+    }
+    .icon-box{
+      width: 100%;
+      margin-bottom: 15rpx;
+    }
+    .icon{
+      width:35rpx;
+      height:37rpx;
+      margin-right: 15rpx;
+      vertical-align: -4px;
+    }
+    .text-box{
+      width: 100%;
+      font-size: 28rpx;
+      line-height: 1.7;
+      text{
+        font-size: 28rpx;
+      }
+    }
+    text{
+      font-size:32rpx;
+      color:#000;
+    }
+    .phone-box{
+      button{
+        text-align: left;
+        padding:0;
+        background-color:transparent;
+        margin:0;
+        font-size: 28rpx;
+        line-height:1;
+        color:#cc0000;
+        border: none;
+        &::after{
+          display:none;
+        }
+      }
+    }
+    .address-btn{
+      text{
+        color:#cc0000;
+        font-size:28rpx;
+      }
+      &::after{
+        display:none;
+      }
+    }
+    .address-text{
+      text{
+        font-size:28rpx;
+        line-height:1.7;
+      }
+    }
+  }
+}
+
+/*景点介绍*/
+.detail-area .area-content{
+  .text{
+    font-size:32rpx;
+    color:#333;
+    line-height:1.8;
+    font-family:'Microsoft YaHei';
+  }
+}
+
+/*相关贴士*/
+.tip-area{
+  line-height:1.5;
+  .area-content{
+    font-size:28rpx;
+    color:#666;
+    margin-bottom:10rpx;
+  }
+  .tip-text{
+    font-size:28rpx;
+    color:#666;
+    margin-bottom:10rpx;
+  }
+  .WxEmojiView {
+    font-size:30rpx;
+    color:#333;
+    line-height:2;
+    padding:10rpx 0;
+    font-family:'Microsoft YaHei';
+  }
+}
+
+/*相关优惠*/
+.discount-area .area-content{
+  background-color:transparent;
+  padding-top:0;
+  padding-bottom:0;
+  border-top:0;
+  border-bottom:0;
+}
+
+/*相关推荐列表*/
+.preferred-area{
+  background-color:transparent;
+  .area-content{
+    padding:0;
+  }
+}
+.un-scroll{
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.shareCover{
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  left:0;
+  top:0;
+  background: rgba(0,0,0,.6);
+  display: none;
+  .shareBox{
+    width: 100%;
+    box-sizing: border-box;
+    position: absolute;
+    left:0;
+    right: 0;
+    overflow: hidden;
+    bottom: -300rpx;
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    background-color: #fff;
+    .share-t{
+      width: 100%;
+      display:flex;
+      display: -webkit-flex;  
+      flex-direction:row;
+      align-items: flex-start;
+      padding:46rpx 0 40rpx;
+      .shareItem{
+        text-align: center;
+        width: 50%;
+        button{
+          width: 70rpx;
+          height: 70rpx;
+          outline: none;
+          border: none;
+          list-style: none;
+          padding:0;
+          margin:0 auto;
+          &:after{
+            border: none;
+          }
+        }
+        image{
+          width: 70rpx;
+          height: 70rpx;
+        }
+        text{
+          font-size: 24rpx;
+        }
+      }
+    }
+    .share-ft{
+      border-top: 1px solid #e6e6e6;
+      text-align: center;
+      text{
+        color: #999999;
+        font-size: 28rpx;
+        line-height: 80rpx;
+      }
+    }
+  }
+  &.showShare{
+    display: block;
+    .shareBox{
+      animation: fadeInUp 0.3s linear forwards;
+      -webkit-animation: fadeInUp 0.3s linear forwards;
+    }    
+  }
+}
+.posterBox{
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding:50rpx;
+  box-sizing: border-box;
+  .poster{
+    width: 100%;
+    display: block;
+    margin:0  auto;
+  }
+  .saveImg{
+    width: auto;
+    font-size: 32rpx;
+    color: #fff;
+    background-color: #e2231a;
+    line-height: 96rpx;
+    padding:0 50rpx;
+    border-radius: 43rpx;
+    position: absolute;
+    bottom:50rpx;
+    left:50%;
+    transform: translate(-50%, 0);
+    -webkit-transform: translate(-50%, 0);
+    white-space: nowrap;
+    &.disabledBtn{
+      background-color: #666;
+    }
+  }
+  .closePoster{
+    width: 88rpx;
+    height: 88rpx;
+    background: transparent;
+    outline: none;
+    border: 0;
+    padding: 0;  
+    position: absolute;
+    right:10rpx;
+    top:10rpx; 
+    text-align: center; 
+    &::after{
+      border:0;
+    }
+    image{
+      width: 44rpx;
+      height: 44rpx;
+      vertical-align: middle;
+    }
+  }
+}
+@-webkit-keyframes fadeInUp {
+  from {
+    bottom:-300rpx;
+  }
+
+  to {
+    bottom:0;
+  }
+}
+@keyframes fadeInUp {
+  from {
+    bottom:-300rpx;
+  }
+
+  to {
+    bottom:0;
+  }
+}
+
+</style>

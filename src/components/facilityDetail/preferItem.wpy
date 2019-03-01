@@ -1,0 +1,68 @@
+<template>
+  <navigator
+    class="prefer-item"
+    open-type="redirect"
+    url="{{item.gzh_articel_link ? './webView?url='+item.gzh_articel_link+'&title='+item.title : './preferDetail?id='+item.id+'&is_theme='+item.is_theme}}">
+    <view class="item-inner">
+      <image class="img img-bg-loading" mode="aspectFill" src="{{item.img}}" wx:if="{{item.img}}"></image>
+      <view class="text">
+        <view class="title"><text>{{item.title}}</text></view>
+        <view class="detail"><text>{{item.intro}}</text></view>
+      </view>
+    </view>
+  </navigator>
+</template>
+<script>
+  import wepy from 'wepy'
+  export default class PreferItem extends wepy.component {
+
+  }
+</script>
+<style lang="less">
+.prefer-item{
+  width:100%;
+  padding:0 44rpx;
+  box-sizing: border-box;
+  .item-inner{
+    padding:40rpx 0;
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:flex-start;
+    border-bottom:2rpx solid #ebebeb;
+  }
+  &:last-child{
+    border-bottom-color:transparent;
+  }
+  .img{
+    width:180rpx;
+    height:120rpx;
+    margin-right:30rpx;
+  }
+  .text{
+    flex:1;
+    line-height:1.5;
+    .title{
+      font-size:32rpx;
+      color:#000;
+      line-height:1;
+      margin-bottom:10rpx;
+      display: -webkit-box;
+      -webkit-line-clamp:1;
+      -webkit-box-orient: vertical;
+      height:1em;
+      overflow:hidden;
+    }
+    .detail{
+      font-size:24rpx;
+      color:#666;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient: vertical;
+      height:3em;
+      overflow:hidden;
+    }
+  }
+}
+</style>

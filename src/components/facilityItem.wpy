@@ -1,0 +1,54 @@
+<template>
+  <repeat for="{{item.gallery}}" key="index" index="index">
+    <navigator class="item"
+      url="./findDetail?regionId={{regionId}}&place_id={{item.id}}">
+      <view class="item-inner">
+        <image class="img img-bg-loading" mode="aspectFill" src="{{item.gallery[index]}}"></image>
+<!--         <view class="text">
+  <text class="title">{{item.title}}</text>
+  <text class="detail" wx:if="{{item.location}}">{{item.location}}</text>
+  <view class="tags" wx:if="{{item.labels}}">
+    <repeat for="{{item.labels}}" key="index" index="index" item="itemTag">
+      <text class="tag">{{itemTag.name}}</text>
+    </repeat>
+  </view>
+</view> -->
+      </view>
+    </navigator>
+  </repeat>
+
+</template>
+<script>
+  import wepy from 'wepy'
+  export default class PreferItem extends wepy.component {
+    data = {
+      regionId: ''
+    }
+    methods = {
+      replaceValue (regionId) {
+        this.regionId = regionId
+        console.log(regionId, 'methods')
+      }
+    }
+  }
+</script>
+<style lang="less">
+  .item{
+    width: 50%;
+    padding: 4rpx;
+    box-sizing: border-box;
+    float: left;
+    .item-inner{
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      box-sizing: border-box;
+      .img{
+        width: 100%;
+        height: 245rpx;
+      }
+    }
+  }
+</style>

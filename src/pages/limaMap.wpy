@@ -1,0 +1,734 @@
+<template>
+  <view class="container map-page">
+    <view class="map-header">
+      <view class="search-box">
+        <input 
+          class="input"
+          placeholder="{{keywordTips}}"
+          confirm-type="搜索"
+          value='{{keyword}}'
+          bindinput='oninput'
+          bindblur='keySearch'
+          bindconfirm="keySearch"
+          />
+        <view class="icon-right">
+          <view wx:if="{{keyword}}" bindtap="clearInput"><image class="clearInput" src="../images/icon_close_find.png"></image></view>
+          <view class="" bindtap="keySearch"><image class="searchBtn" src="../images/icon_search_blank.png"></image></view>           
+        </view>  
+      </view>
+      <navigator class="find" url="./find?region_id={{regionId}}&cateId={{cateId}}&childId={{childId}}&keyword={{keyword}}">
+        <text>发现</text>
+        <image src="../images/arrow-rb.png"></image>
+      </navigator>
+    </view>   
+    <view class="map-content img-bg-loading">
+      <map id="map"
+        latitude="{{activeMark.latitude}}"
+        longitude="{{activeMark.longitude}}"
+        scale="{{mapScale}}"
+        markers="{{markers}}"
+        bindmarkertap="markertap"
+        bindcallouttap="callouttap"
+        show-location="true" wx:if="{{showMap}}">
+      </map>  
+    </view>
+    <view class="map-footer" wx:if="{{showSubNav}}">
+      <view class="cate-sub-nav">
+        <view class="sub-nav-swiper">
+          <text class="all-item {{subNavData.length==1? 'show': 'hide'}}">全部</text>
+          <swiper duration="500" display-multiple-items="{{multipleCount}}" current="{{subNavIndex}}" bindanimationfinish="controlBtn"  bindchange="changeswiper" class="{{subNavData.length>1? 'show': 'hide'}}">
+            <block wx:for="{{subNavData}}">
+              <swiper-item class="item {{childId == item.id ? 'on' : ''}} {{item.id == -1 ? 'noFontSize' : ''}}" data-child-id = "{{item.id}}"  bindtap="switchSubNav">
+                <text class="txt">{{item.name}}</text>
+              </swiper-item>
+            </block>
+          </swiper>          
+        </view>
+        <view class="next-btn btn {{subNavBtnShow?'show':'hide'}}" bindtap='bindNext'>
+          <image class="arrow arrow-r" src="../images/arrow-r.png"></image>
+        </view>
+        <view class="prew-btn btn {{subNavBtnShow?'show':'hide'}}" bindtap='bindPrev'>
+          <image class="arrow arrow-r" src="../images/arrow-l.png"></image>
+        </view>    
+      </view>
+      <view class="cate-nav">
+        <swiper duration="500" display-multiple-items="4">
+          <block wx:for="{{navData}}">
+            <swiper-item class="item {{cateId == item.id ? 'on' : ''}}" data-cate-id = "{{item.id}}" bindtap="switchNav">
+              <image src="{{item.img}}" class="icon {{cateId !== item.id ? 'show' : 'hide '}}"/>
+              <image src="{{item.imgOn}}" class="icon {{cateId == item.id ? 'show' : 'hide'}}"/>
+              <text class="txt">{{item.name}}</text> 
+            </swiper-item>
+          </block>
+        </swiper>
+      </view>
+    </view>
+    <view wx:else class="map-swiper">
+      <view class="arrow {{mapSwiperShow?'':'arrow-up'}}" bindtap="foldSwiperEvent">
+        <image src="../images/arrow-down.png" mode="aspectFill"></image>
+      </view>
+      <swiper
+        interval="5000"
+        duration="500"
+        circular="{{true}}"
+        previous-margin="50rpx"
+        next-margin="50rpx"
+        current="0"
+        bindchange='onSlideChangeEnd'
+        class="{{mapSwiperShow?'show':'hide'}}"
+      >
+        <block wx:for="{{mapSwiperData}}">
+          <swiper-item>
+            <navigator url="findDetail?region_id={{regionId}}&place_id={{item.id}}" hover-class="navigator-hover">
+              <view class="swiper-box">
+                <image class="img img-bg-loading" mode="aspectFill" src="{{item.img}}"></image>
+                <view class="info">
+                  <text class="title">{{item.title}}</text>
+                  <text class="intro">{{item.intro}}</text>
+                </view>              
+              </view>  
+            </navigator>     
+          </swiper-item>
+        </block>
+      </swiper> 
+    </view>
+    </map>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+  
+  export default class LimaMap extends wepy.page {
+    config = {
+      navigationBarTitleText: '地图'
+    }
+    data = {
+      multipleCount: 4,
+      regionsData: [],
+      regionId: '',
+      cateId: '',
+      keyword: '',
+      childId: '',
+      size: 0,
+      keywordTips: '圣谷',
+      activeMark: {
+        latitude: -12.044319,
+        longitude: -77.03536
+      },
+      deafultCenter: {
+        latitude: -12.044319,
+        longitude: -77.03536
+      },
+      mapScale: 18,
+      markers: [],
+      mapSwiperData: [],
+      mapSwiperShow: true,
+      showMap: false,
+      navData: [],
+      subNavIndex: 0,
+      subNavBtnShow: false,
+      subNavData: [],
+      showSubNav: false,
+      controlOff: true
+    }
+    watch = {
+      cateId (newValue, oldValue) {
+        this.setSubCategoriesData()
+      }
+    }
+    onSlideChangeEnd (e) {
+      console.log(e.detail.current)
+      let self = this
+      self.markers.forEach((row, key) => {
+        row.callout.display = 'BYCLICK'
+        if (key === e.detail.current) {
+          row.callout.display = 'ALWAYS'
+        }
+      })
+    }
+    getCateNavName (cateId) {
+      let liveData = wepy.getStorageSync('live')
+      let name = ''
+      if (liveData) {
+        liveData.filter((row, index) => {
+          if (row.id === cateId) {
+            name = row.name
+          }
+        })
+      }
+      return name
+    }
+    oninput (e) {
+      this.keyword = e.detail.value
+    }
+    clearInput (e) {
+      this.keyword = ''
+      this.showMap = false
+      this.getData()
+    }
+    keySearch () {
+      this.showMap = false
+      this.getData()
+    }
+    markertap (e) {
+      let self = this
+      var markerId = parseInt(e.markerId)
+      self.markers.forEach((row, key) => {
+        row.callout.display = 'BYCLICK'
+        if (row.id === markerId) {
+          row.callout.display = 'ALWAYS'
+        }
+      })
+    }
+    callouttap (e) {
+      wx.navigateTo({
+        url: 'findDetail?region_id=' + parseInt(this.regionId) + '&place_id=' + parseInt(e.markerId),
+        success: function () {},
+        fail: function () {},
+        complete: function () {}
+      })
+    }
+    setAllCategoriesData () {
+      let self = this
+      let liveData = wepy.getStorageSync('live')
+      if (liveData) {
+        liveData.forEach((row, index) => {
+          row.imgOn = self.changeOnCateIcon(row.name.replace(/\s+/g, ''))
+          row.img = self.changeCateIcon(row.name.replace(/\s+/g, ''))
+          self.navData = liveData
+          self.$apply()
+        })
+      }
+    }
+    setSubCategoriesData () {
+      let self = this
+      let liveData = wepy.getStorageSync('live')
+      if (liveData) {
+        liveData.forEach((row, index) => {
+          if (self.cateId === row.id) {
+            self.subNavIndex = 0
+            var arrItem = {id: -1, name: '&nbsp;'}
+            row.children.unshift({id: 0, name: '全部'})
+            if (row.children.length < self.multipleCount) {
+              self.subNavBtnShow = false
+              if (row.children.length === 3) {
+                row.children.push(arrItem)
+              }
+              if (row.children.length === 2) {
+                for (let i = 0; i < self.multipleCount - 2; i++) {
+                  if (i === 0) {
+                    row.children.unshift(arrItem)
+                  }
+                  row.children.push(arrItem)
+                }
+              }
+            } else {
+              self.subNavBtnShow = true
+            }
+            self.subNavData = row.children
+          }
+        })
+        self.$apply()
+      }
+    }
+    changeCateIcon (cateName) {
+      var cateIconUrl = ''
+      if (cateName === '景点') {
+        cateIconUrl = '/images/spot.png'
+      } else if (cateName === '美食') {
+        cateIconUrl = '/images/food.png'
+      } else if (cateName === '购物') {
+        cateIconUrl = '/images/shop.png'
+      } else if (cateName === '酒店') {
+        cateIconUrl = '/images/hotel.png'
+      }
+      return cateIconUrl
+    }
+    changeOnCateIcon (cateName) {
+      var cateOnIconUrl = ''
+      if (cateName === '景点') {
+        cateOnIconUrl = '/images/spot-on.png'
+      } else if (cateName === '美食') {
+        cateOnIconUrl = '/images/food-on.png'
+      } else if (cateName === '购物') {
+        cateOnIconUrl = '/images/shop-on.png'
+      } else if (cateName === '酒店') {
+        cateOnIconUrl = '/images/hotel-on.png'
+      }
+      return cateOnIconUrl
+    }
+    changeMapIcon (cateId) {
+      let self = this
+      let cateName = ''
+      let mapIconUrl = ''
+      let liveData = wepy.getStorageSync('live')
+      if (liveData) {
+        liveData.forEach((row, index) => {
+          if (cateId === row.id) {
+            cateName = row.name
+          }
+        })
+        self.$apply()
+      }
+      if (cateName === '景点') {
+        mapIconUrl = '/images/map-spot.png'
+      } else if (cateName === '美食') {
+        mapIconUrl = '/images/map-food.png'
+      } else if (cateName === '购物') {
+        mapIconUrl = '/images/map-shop.png'
+      } else if (cateName === '酒店') {
+        mapIconUrl = '/images/map-hotel.png'
+      }
+      return mapIconUrl
+    }
+    changeOnMapIcon (cateId) {
+      let self = this
+      let cateName = ''
+      let mapIconUrl = ''
+      let liveData = wepy.getStorageSync('live')
+      if (liveData) {
+        liveData.forEach((row, index) => {
+          if (self.cateId === row.id) {
+            cateName = row.name
+          }
+        })
+        self.$apply()
+      }
+      if (cateName === '景点') {
+        mapIconUrl = '/images/map-spot-on.png'
+      } else if (cateName === '美食') {
+        mapIconUrl = '/images/map-food-on.png'
+      } else if (cateName === '购物') {
+        mapIconUrl = '/images/map-shop-on.png'
+      } else if (cateName === '酒店') {
+        mapIconUrl = '/images/map-hotel-on.png'
+      }
+      return mapIconUrl
+    }
+    switchNav (e) {
+      let self = this
+      let clickCateId = e.currentTarget.dataset.cateId
+      if (clickCateId === self.cateId) return
+      self.cateId = clickCateId
+      if (self.getCateNavName(self.cateId) !== '') wepy.setNavigationBarTitle({title: self.getCateNavName(self.cateId)})
+      self.childId = 0
+      self.showMap = false
+      self.getData()
+    }
+    switchSubNav (e) {
+      let self = this
+      let clickChildId = e.currentTarget.dataset.childId
+      if (clickChildId === -1) return
+      if (clickChildId !== self.childId) {
+        self.childId = clickChildId
+        self.showMap = false
+        self.getData()
+      }
+    }
+    foldSwiperEvent () {
+      this.mapSwiperShow = !this.mapSwiperShow
+    }
+    controlBtn () {
+      this.controlOff = true
+    }
+    changeswiper (e) {
+      this.subNavIndex = e.detail.current
+    }
+    bindPrev () {
+      if (this.controlOff) {
+        if (this.subNavIndex === 0) {
+          return
+        }
+        this.controlOff = false
+        this.subNavIndex = this.subNavIndex > 0 ? this.subNavIndex - 1 : this.subNavIndex
+      }
+    }
+    bindNext () {
+      let navLength = this.subNavData.length
+      let maxIndex = this.subNavData.length - 4
+      if (this.controlOff) {
+        if (this.subNavData.length % 4 === 0) {
+          if ((this.subNavIndex + 1) > maxIndex) {
+            return
+          }
+        } else {
+          if (this.subNavIndex < navLength - (this.subNavData.length % 4)) {
+            return
+          }
+        }
+        this.controlOff = false
+        this.subNavIndex = this.subNavIndex < (this.subNavData.length - 1) ? this.subNavIndex + 1 : this.subNavIndex
+      }
+    }
+    getData () {
+      let self = this
+      // 显示数据
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.places.url + '&region_id=' + self.regionId + '&category_id=' + self.cateId + '&category_two_id=' + self.childId + '&page=' + self.page + '&size=' + self.size + '&words=' + self.keyword,
+        method: api.places.method,
+        success: function (res) {
+          wepy.hideLoading()
+          if (res.data.length > 0) {
+            let data = res.data
+            var markers = []
+            for (var i = 0; i < res.data.length; i++) {
+              if (parseInt(res.data[i].latitude) !== 0 && parseInt(res.data[i].longitude) !== 0) {
+                self.activeMark.latitude = res.data[i].latitude
+                self.activeMark.longitude = res.data[i].longitude
+                break
+              }
+            }
+            data.forEach((row, key) => {
+              if (parseInt(row.latitude) !== 0 && parseInt(row.longitude) !== 0) {
+                var placeTit = self.stringSp(row.title, 64) + '\n\n'
+                var placeIntro = self.stringSp(row.intro, 128)
+                var placeContent = placeTit + placeIntro
+                var iconPath = row.category_id ? self.changeMapIcon(row.category_id) : '/images/icon_position_red.png'
+                var mark = {
+                  iconPath: iconPath,
+                  id: row.id,
+                  latitude: row.latitude ? row.latitude : self.deafultCenter.latitude,
+                  longitude: row.longitude ? row.longitude : self.deafultCenter.longitude,
+                  width: 22,
+                  height: 27,
+                  callout: {
+                    content: placeContent,
+                    color: '#000000',
+                    fontSize: '14',
+                    bgColor: '#ffffff',
+                    padding: '20',
+                    display: 'BYCLICK'
+                  }
+                }
+                markers.push(mark)
+              }
+            })
+            self.mapSwiperData = data
+            self.markers = markers
+            self.markers[0].callout.display = 'ALWAYS'
+          } else {
+            self.markers = []
+          }
+          self.showMap = true
+          self.$apply()
+        }
+      })
+    }
+    stringSp (text, len) {
+      let isOverflow = false
+      if (text.replace(/[\u4e00-\u9fa5]/g, 'aa').length > len) {
+        let _length = 0
+        let outputText = ''
+        for (let i = 0; i < text.length; i++) {
+          if (/[\u4e00-\u9fa5]/.test(text[i])) {
+            _length += 2
+          } else {
+            _length += 1
+          }
+          if (_length > len) {
+            isOverflow = true
+            break
+          } else {
+            outputText += text[i]
+          }
+        }
+        text = outputText
+      }
+      text = text.replace(/[^\x00-\xff]/g, '$&\x01').replace(/.{32}\x01?/g, '$&\n').replace(/\x01/g, '')
+      if (isOverflow) {
+        text += '...'
+      }
+      return text
+    }
+    onLoad (options) {
+      this.childId = 0
+      this.page = 1
+      this.regionId = options.region_id
+      if (parseInt(options.region_id) === 6) {
+        console.log('马丘比丘')
+        this.keywordTips = '太阳门'
+        this.showSubNav = false
+      } else {
+        console.log('库斯科')
+        this.keywordTips = '圣谷'
+        this.keyword = options.keyword
+        this.cateId = options.cateId === '' ? '' : parseInt(options.cateId)
+        this.showSubNav = true
+        if (this.getCateNavName(this.cateId) !== '') wepy.setNavigationBarTitle({title: this.getCateNavName(this.cateId)})
+      }
+      this.getData()
+      this.setAllCategoriesData()
+      this.setSubCategoriesData()
+    }
+  }
+</script>
+<style lang="less">
+.map-page{
+  width:100%;
+  height:100%;
+  background-color:#f5f5f5;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+#map{
+  width:100%;
+  height:100%;
+}
+.map-header{
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding:40rpx 50rpx;
+  background-color: #fff;
+  height: 150rpx;
+  overflow: hidden;
+  .search-box{
+    width: 76%;
+    float: left;
+    background-color: #fff;
+    border: 1px solid #ebebeb;
+    .input{
+      height: 66rpx;
+      line-height: 66rpx;
+      width: 72%;
+      float: left;
+      font-size: 28rpx;
+      color: #999;
+      min-height: auto;
+      padding-left: 20rpx;
+      box-sizing: border-box;
+    }
+    .icon-right{
+      width: 28%;
+      float: right;
+      box-sizing: border-box;
+      height: 40rpx;
+      margin-top:13rpx;
+      border-left: 1px solid #e2e2e2;
+      text-align: center;
+      &>view{
+        display: inline-block;
+        width: 45%;
+        text-align: center;
+        image{
+          vertical-align: top;
+        }
+      }
+    }
+    .clearInput{
+      width: 25rpx;
+      height: 24rpx;
+      margin-top: 8rpx;
+    }
+    .searchBtn{
+      width: 26rpx;
+      height: 26rpx;
+      margin-top: 7rpx;
+    }
+  }
+  .find{
+    width: 20%;
+    float: right;
+    height: 66rpx;
+    background-color: #fff;
+    border: 1px solid #fff;
+    text-align: right;
+    text{
+      font-size: 32rpx;
+      line-height: 66rpx;
+    }
+    image{
+      width: 14rpx;
+      height: 24rpx;
+      margin-left: 20rpx;
+    }
+  }
+}
+.map-content{
+  width:100%;
+/*   height: calc(100% - 430rpx); */
+  flex:1;
+  position:relative;
+  overflow:hidden;
+  flex-grow:1;
+}
+.map-footer{
+  width: 100%;
+  height: 268rpx;
+  height: 180rpx;
+  background-color: #880063;
+  color: #fff;
+  .cate-sub-nav{
+    padding-top: 34rpx;
+    height: 60rpx;
+    overflow: hidden;
+    position: relative;
+    .all-item{
+      width: calc(100% / 4);
+      height: 100%;
+      border: 1px solid #fff;
+      line-height: 58rpx;
+      box-sizing: border-box;
+      text-align: center;
+      border-radius: 28rpx;
+      font-size: 28rpx;
+      display: block;
+      margin:0 auto;
+    }
+    .sub-nav-swiper{
+      width: 88%;
+      margin:0 auto;
+      height: 60rpx;
+      swiper{
+        height: 100%;
+      }  
+      .item{
+        text{
+          width: calc(100% - 2px);
+          height: calc(100% - 2px);
+          line-height: 58rpx;
+          border: 1px solid #e2231a;
+          border-radius: 28rpx;
+          font-size: 28rpx;
+          color: #fff;
+          text-align: center;
+          display: block
+        }
+        &.noFontSize{
+          text{
+            font-size: 0;
+          }
+        }
+        &.on{
+          text{
+            border-color: #fff;
+          }
+        } 
+      }          
+    }
+    .btn{
+      width: 6%;
+      height: 60rpx;
+      text-align: center;
+      position: absolute;
+      left: 0;
+      top: 40rpx;
+      &.next-btn{
+        left: auto;
+        right: 0;
+      }
+      .arrow{
+        width: 14rpx;
+        height: 24rpx;
+        margin-top: 20rpx;
+      }      
+    }
+    /* 测试 */
+    display: none;
+  }
+  .cate-nav{
+    height: 180rpx;
+    overflow: hidden;
+    .item{
+      text-align: center;
+      padding-top: 38rpx;
+      .icon{
+        width: 64rpx;
+        height: 61rpx;
+        margin:0 auto;
+      }
+      .txt{
+        font-size: 24rpx;
+        display: block;
+        padding-top: 15rpx;
+      }
+    }
+  }
+}
+.map-swiper{
+  width: 100%;
+  padding: 10rpx 0 20rpx;
+  .arrow{
+    width: 30rpx;
+    height: 22rpx;
+    display: block;
+    margin: 0 auto;
+    padding:10rpx;
+    image{
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .arrow-up{
+    image{
+      transform: rotate(-180deg);
+      -webkit-transform: rotate(-180deg);     
+    }
+  }
+  swiper{
+    height: 190rpx;
+    margin:20rpx 0 30rpx;
+    swiper-item{
+      height: 100%;
+      padding:0 18rpx;
+      box-sizing: border-box;
+      navigator{
+        width: 100%;
+        height: 170rpx;
+        display: block;
+        margin: 10rpx 0;
+      }
+      .swiper-box{
+        width: 100%;
+        height: 100%;
+        padding-left:256rpx;
+        padding-right: 40rpx;
+        position: relative;
+        box-sizing: border-box;
+        box-shadow: 0 0 15rpx rgba(0,0,0,.1);
+      }
+      .img{
+        width: 230rpx;
+        height: 100%;
+        position: absolute;
+        left:0;
+        top:0;
+      }
+      .info{
+        .title{
+          width: 100%;
+          font-size: 32rpx;
+          display: -webkit-box;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          word-wrap: break-word;
+          white-space: normal !important;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          padding-top:30rpx;
+          margin-bottom: 15rpx;    
+        }
+        .intro{
+          width: 100%;
+          line-height: 28rpx;
+          font-size: 20rpx;
+          display: -webkit-box;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          word-wrap: break-word;
+          white-space: normal !important;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;  
+        }
+      }
+    }
+  }
+}
+</style>

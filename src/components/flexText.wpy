@@ -1,0 +1,97 @@
+<template>
+  <view class="flex-text">
+    <view class="text {{open?'text-full':''}}">
+      <slot name="text"></slot>
+    </view>
+    <button
+      class="open-btn {{open?'close-btn':''}}"
+      bindtap="switchOpen">
+      <image class="icon" src="../images/icon_down.png"></image>
+      <text>{{open?'收起':'展开'}}</text>
+    </button>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+
+  export default class FlexText extends wepy.component {
+    props = {
+      open: {
+        type: Boolean,
+        default: false
+      },
+      text: String
+    }
+    methods = {
+      switchOpen () {
+        this.open = !this.open
+      },
+      open () {
+        this.open = true
+      },
+      close () {
+        this.open = false
+      }
+    }
+  }
+</script>
+<style lang="less">
+.flex-text{
+  width:100%;
+  box-sizing:border-box;
+  padding:60rpx 40rpx;
+  padding-top:40rpx;
+  background-color:#fff;
+  position:relative;
+  .text{
+    width:100%;
+    display:block;
+    font-size:30rpx;
+    color:#333;
+    line-height:2;
+    height:8em;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp:4;
+    -webkit-box-orient: vertical;
+    overflow:hidden;
+    font-family:'Microsoft YaHei';
+    &.text-full{
+      height:auto;
+      overflow:auto;
+      display:block;
+    }
+  }
+  .open-btn{
+    position:absolute;
+    bottom:30rpx;
+    right:40rpx;
+    border:0;
+    padding:0;
+    line-height:1;
+    border-radius:0;
+    display:flex;
+    flex-direction:row;
+    align-items:cente;
+    justify-content:flex-start;
+    &::after{
+      display:none;
+    }
+    &.close-btn{
+      .icon{
+        transform:rotate(180deg);
+      }
+    }
+    .icon{
+      width:26rpx;
+      height:26rpx;
+      margin-right:10rpx;
+    }
+    text{
+      font-size:24rpx;
+      color:#333;
+      line-height:26rpx;
+    }
+  }
+}
+</style>

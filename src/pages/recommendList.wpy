@@ -1,0 +1,130 @@
+<template>
+  <view>
+    <view class="recommend-list">
+      <repeat for="{{recommendData}}" key="index" index="index" item="item">
+        <recommendItem :item="item"/>
+      </repeat>
+      <rowLoading />
+      <unData />  
+    </view> 
+    <view class="up-refresh" wx:if="{{!loading && canLoadingMore}}">
+        <text>上拉加载</text>
+        <image src="../images/up-arrow-black.png" mode="aspectFill"/>
+    </view>         
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+  import RecommendItem from '../components/recommendItem'
+  import RowLoading from '../components/rowLoading'
+  import UnData from '../components/unData'
+
+  export default class Index extends wepy.page {
+    config = {
+      navigationBarTitleText: '库斯科旅行指南'
+    }
+    components = {
+      recommendItem: RecommendItem,
+      rowLoading: RowLoading,
+      unData: UnData
+    }
+    data = {
+      dataInit: true,
+      loading: true,
+      canLoadingMore: true,
+      page: 1,
+      size: 10,
+      recommendData: []
+    }
+    getRecommendData (loadingMore) {
+      let self = this
+      self.loading = true
+      if (self.dataInit) {
+        wepy.showLoading({
+          title: '加载中'
+        })
+      } else {
+        self.$invoke('rowLoading', 'show')
+      }
+      request({
+        url: api.hot.url + '&page=' + self.page + '&pagesize=' + self.size,
+        method: api.hot.method,
+        success: function (res) {
+          self.loading = false
+          self.canLoadingMore = !(res.data.data.length < self.size)
+          if (self.dataInit) {
+            wepy.hideLoading()
+            self.dataInit = false
+          } else {
+            self.$invoke('rowLoading', 'hide')
+          }
+          if (res.data.data.length > 0) {
+            self.recommendData = self.recommendData.concat(res.data.data)
+            self.page++
+            self.$invoke('unData', 'hide')
+          } else {
+            if (!loadingMore) {
+              self.recommendData = []
+              self.$invoke('unData', 'show')
+            }
+          }
+          self.$apply()
+        }
+      })
+    }
+    onReachBottom () {
+      if (!this.loading && this.canLoadingMore) {
+        this.getRecommendData(true)
+      }
+    }
+    onLoad () {
+      this.getRecommendData()
+    };
+    /**
+     * 用户点击右上角分享
+     */
+    onShareAppMessage (res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: '库斯科旅行指南',
+        path: 'pages/index',
+        success: function (res) {
+          // 转发成功
+        },
+        fail: function (res) {
+          // 转发失败
+        }
+      }
+    }
+  }
+</script>
+<style lang="less">
+  .recommend-list {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    padding: 50rpx;
+    box-sizing: border-box;
+  }
+  .up-refresh{
+    width: 100%;
+    text-align: center;
+    text {
+      font-size: 20rpx;
+      line-height: 20rpx;
+      color: #666;
+    }
+    image{
+      width: 20rpx;
+      height: 20rpx;
+      vertical-align: middle;
+      margin-top: 2rpx;
+    }
+  }    
+</style>

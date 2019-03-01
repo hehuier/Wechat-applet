@@ -1,0 +1,157 @@
+<template>
+  <view class="voucher-item">
+    <image class="img img-bg-loading" mode="aspectFill" src="{{item.ad_img}}"></image>
+    <view class="text">
+      <view class="title">
+        <text>{{item.type == 0 ? '优惠券' : '兑换券'}}</text>
+        <text class="discount" wx:if="{{item.type == 0}}">{{item.title}}<text class="small">折</text></text>
+        <text class="discount discount2" wx:if="{{item.type == 1}}">{{item.title}}</text>
+      </view>
+<!--       <view class="text-line">
+        <image class="icon" src="../../images/icon_hotel_blank.png"></image>
+        <text class="text">{{item.adress}}</text>
+      </view> -->
+      <view class="text-line">
+        <image class="icon" src="../../images/icon_date.png"></image>
+        <text class="text">{{item.start_date}}-{{item.end_date}}</text>
+      </view>
+    </view>
+    <view class="btn-box">
+      <view class="tip tip-up"></view>
+      <button class="receive-btn" disabled="{{item.is_gived}}" @tap="receive({{item.id}})">{{item.is_gived ? '已取' : '领取'}}</button>
+      <view class="tip tip-down"></view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from 'wepy'
+  export default class VoucherItem extends wepy.component {
+    methods = {
+      receive (id) {
+        this.$emit('receive', id)
+      }
+    }
+  }
+</script>
+<style lang="less">
+.voucher-item{
+  width:100%;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  box-sizing:border-box;
+  padding:12rpx 24rpx;
+  background-color:#fff;
+  border-radius:6rpx;
+  margin-bottom:24rpx;
+  &:last-child{
+    margin-bottom:0;
+  }
+  .img{
+    width:180rpx;
+    height:120rpx;
+    margin-right:30rpx;
+  }
+  .text{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:flex-start;
+    box-sizing:border-box;
+    padding-right:0.5em;
+    .title{
+      width:100%;
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:flex-start;
+      line-height:1;
+      margin-bottom:18rpx;
+      color:#000;
+      font-size:30rpx;
+      position:relative;
+      .discount{
+        position:absolute;
+        top:0;
+        right:0;
+        font-size:36rpx;
+        line-height:1;
+        color:#ff6600;
+        font-weight:blod;
+        font-style:italic;
+        &.discount2{
+          font-size:28rpx;
+          color:#028ac6;
+          font-style:normal;
+        }
+        .small{
+          font-size:18rpx;
+        }
+      }
+    }
+    .text-line{
+      line-height:1;
+      display:flex;
+      flex-direction:row;
+      align-items:flex-start;
+      justify-content:flex-start;
+      margin-bottom:10rpx;
+      &:last-child{
+        margin-bottom:0;
+      }
+      text{
+        font-size:24rpx;
+        color:#000;
+      }
+      .icon{
+        width:24rpx;
+        height:24rpx;
+        margin-right:10rpx;
+      }
+    }
+  }
+  .btn-box{
+    border-left:2rpx dashed #dcdcdc;
+    height:120rpx;
+    padding-left:20rpx;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    box-sizing:center;
+    position:relative;
+    .tip{
+      width:16rpx;
+      height:16rpx;
+      background-color:#f5f5f5;
+      border-radius:50%;
+      display:none;
+      //position:absolute;
+      &.tip-up{
+        top:-20rpx;
+        left:-8rpx;
+      }
+      &.tip-down{
+        bottom:-20rpx;
+        left:-8rpx;
+      }
+    }
+    .receive-btn{
+      border:0;
+      background-color:#e53b3b;
+      color:#fff;
+      padding:0.5em;
+      font-size:30rpx;
+      line-height:1;
+      &::after{
+        display:none;
+      }
+      &[disabled]{
+        background-color:#999;
+      }
+    }
+  }
+}
+</style>

@@ -1,0 +1,154 @@
+
+<template>
+  <view class="container collect-page">
+    <view class="topBar" wx:if="{{showTopBar}}">
+      <button class="addressBtn" @tap="openMap">
+        <image class="icon" src="../images/idress_icon_2.png"></image>
+        <text>坐标地图</text>
+      </button>
+    </view>
+    <view class="list">
+      <repeat for="{{collectData}}" key="index" index="index" item="item">
+        <collectItem :item="item"/>
+      </repeat>
+      <unData :text="unDataText"/>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+  import CollectItem from '../components/collectItem'
+  import UnData from '../components/unData'
+
+  export default class Collect extends wepy.page {
+    config = {
+      navigationBarTitleText: '我的收藏'
+    }
+    components = {
+      collectItem: CollectItem,
+      unData: UnData
+    }
+    data = {
+      showTopBar: false,
+      ukey: '',
+      unDataText: '你还没有收藏喜欢的目的地哦！',
+      collectData: []
+    }
+    events = {
+      'delete': (id) => {
+        let self = this
+        request({
+          url: api.deletetrip.url + '&schedule_id=' + id + '&ukey=' + self.ukey + '&status=2',
+          method: api.deletetrip.method,
+          success: function (res) {
+            if (res.data.success) {
+              self.getData()
+              wepy.showToast({
+                title: '删除成功',
+                icon: 'success',
+                duration: 1000
+              })
+            } else {
+              wepy.showToast({
+                title: '删除失败',
+                duration: 1000
+              })
+            }
+          }
+        })
+      }
+    }
+    methods = {
+      openMap () {
+        wepy.navigateTo({
+          url: './map?mapType=collect&ukey=' + this.ukey
+        })
+      }
+    }
+    getData () {
+      let self = this
+      request({
+        url: api.triplist.url + '&ukey=' + self.ukey,
+        method: api.triplist.method,
+        success: function (res) {
+          wepy.hideLoading()
+          self.collectData = res.data
+          if (res.data.length > 0) {
+            self.$invoke('unData', 'hide')
+            var hasMarkNum = 0
+            res.data.forEach((row, key) => {
+              if (parseInt(row.latitude) !== 0 && parseInt(row.longitude) !== 0) {
+                hasMarkNum++
+              }
+            })
+            self.showTopBar = hasMarkNum
+          } else {
+            self.showTopBar = false
+            self.$invoke('unData', 'show')
+          }
+          self.$apply()
+        }
+      })
+    }
+    getUkey () {
+      let self = this
+      wepy.getStorage({
+        key: 'ukey',
+        success: function (res) {
+          self.ukey = res.data
+          self.getData()
+          self.$apply()
+        }
+      })
+    }
+    onShow () {
+      this.getUkey()
+    }
+    onLoad () {
+      this.getUkey()
+    }
+  }
+</script>
+
+<style lang="less">
+/*收藏列表*/
+.list{
+  width:100%;
+  height:100%;
+  padding:50rpx 30rpx;
+  background-color:#fff;
+  box-sizing:border-box;
+}
+.topBar{
+  padding:0 30rpx;
+  padding-top:50rpx;
+  width:100%;
+  box-sizing:border-box;
+  display: none;
+}
+.addressBtn{
+  width:100%;
+  padding:0.5em 0;
+  display:flex;
+  flex-direction:row;
+  justify-content:center;
+  align-items:center;
+  height:70rpx;
+  border:1px solid #008cd2;
+  background-color:transparent;
+  border-radius:35rpx;
+  .icon{
+    width:41rpx;
+    height:39rpx;
+    margin-right:16rpx;
+  }
+  text{
+    font-size:32rpx;
+    color:#008cd2;
+    font-weight:normal;
+  }
+}
+</style>

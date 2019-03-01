@@ -1,0 +1,164 @@
+<template>
+<view class="container trip-line-page">
+  <view class="line-list">
+    <repeat for="{{lineData}}" key="index" index="index" item="item">
+      <view class="line-item">
+        <view class="line-th">{{item.overview}}</view>
+        <repeat for="{{item.spotInfo}}" key="spotIndex" index="spotIndex" item="spotItem">
+            <view class="line-con">
+              <view class="item-th">
+                <image src="../images/icon-line.png" alt="" class="icon" mode="aspectFill"></image>
+                <text>{{spotItem.title}}</text>
+              </view>
+              <view class="item-con">
+                <navigator
+                  url="./findDetail?place_id={{spotItem.id}}"
+                  hover-class="navigator-hover"
+                >
+                  <image class="item-img" src="{{spotItem.spot_img}}" mode="aspectFill" class="item-img img-bg-loading"></image>
+                </navigator>                
+                <text class="item-txt">{{spotItem.overview}}</text>
+                <view class="tips-box {{spotItem.distance>0?'show':'hide'}}">
+                  <view class="tips"><text>距离当前目的地{{spotItem.distance}}KM</text></view>
+                  <view class="tips"><text>{{spotItem.remark}}</text></view> 
+                </view>
+              </view>                      
+            </view>
+        </repeat>
+<!--         <view class="line-item">
+           <view class="item-th">
+             <image src="../images/icon-line.png" alt="" class="icon" mode="aspectFill"></image>
+             <text>{{item.title}}</text>
+           </view>
+           <view class="item-con">
+             <image class="item-img" mode="aspectFill" src="{{item.spot_img}}" mode="aspectFill" class="item-img"></image>
+             <text class="item-txt">{{item.overview}}</text>
+             <view class="tips-box {{item.distance>0?'show':'hide'}}">
+               <view class="tips"><text>距离当前目的地{{item.distance}}KM</text></view>
+               <view class="tips"><text>{{item.remark}}</text></view>            
+             </view>        
+           </view>
+         </view>   -->         
+      </view>     
+    </repeat>
+  </view>
+</view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+
+  export default class tripLine extends wepy.page {
+    config = {
+      navigationBarTitleText: '行程推荐'
+    }
+    data = {
+      lineId: '',
+      lineData: []
+    }
+    getItineraryData () {
+      let self = this
+      wepy.showLoading({
+        title: '加载中'
+      })
+      request({
+        url: api.alltripDetail.url + '&id=' + self.lineId,
+        method: api.alltripDetail.method,
+        success: function (res) {
+          wepy.hideLoading()
+          self.lineData = res.data.data.info
+          self.$apply()
+        }
+      })
+    }
+    onLoad (options) {
+      this.lineId = options.itinerId
+      this.getItineraryData()
+    }
+    /**
+     * 用户点击右上角分享
+     */
+    onShareAppMessage (res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: this.detailData.title,
+        path: 'pages/facilityDetail?place_id=' + this.place_id,
+        success: function (res) {
+          // 转发成功
+        },
+        fail: function (res) {
+          // 转发失败
+        }
+      }
+    }
+  }
+</script>
+<style lang="less">
+  .line-list{
+    width: 100%;
+    box-sizing: border-box;
+    padding:60rpx 50rpx;
+  }
+  .line-item{
+    margin-bottom: 80rpx;
+    .line-th{
+      padding-left:60rpx;
+      font-size: 24rpx;
+      font-weight: bold;
+    }
+    .line-con{
+      padding-left: 60rpx;
+      border-left:1px dashed #aaa;
+      margin-bottom: 40rpx;
+    }
+    .item-th{
+      position: relative;
+      margin:10rpx 0 26rpx;
+      .icon{
+        width: 42rpx;
+        height: 86rpx;
+        position: absolute;
+        left: -81rpx;
+      }
+      text{
+        font-size: 48rpx;
+        line-height: 1.25;
+      } 
+    }
+    .item-con{
+      padding: 15rpx 0 50rpx 0;
+      .item-img{
+        width: 100%;
+        border-radius: 8rpx;
+        margin-bottom: 35rpx;
+      }
+      .item-txt{
+        font-size: 28rpx;
+        line-height: 2.14;
+      }      
+      .tips-box{
+        margin-top: 36rpx;
+        background-color: #f5f5f5;
+        border-radius: 8rpx;
+        width: 100%;
+        box-sizing: border-box;
+        padding:50rpx 30rpx 20rpx;
+        .tips{
+          margin-bottom: 30rpx;
+          text{
+            word-wrap: break-word;
+          }
+          image{
+            width: 28rpx;
+            height: 28rpx;
+            font-size: 24rpx;
+            margin-right: 20rpx;
+          }
+        }
+      }   
+    }
+  }
+</style>

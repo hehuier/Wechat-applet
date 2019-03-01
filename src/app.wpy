@@ -1,0 +1,98 @@
+<style lang="less">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.hide {
+  display: none !important;
+}
+ 
+.show {
+  display: block !important;
+}
+
+page{
+  width:100%;
+  height:100%;
+}
+.img-bg-loading{
+  background:#eeeeee url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIoAAABTCAYAAABAtp+DAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTUgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjU0MDFGMzBFRkU4OTExRThCNEFGOTkxRDMzM0Y2Q0VDIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjU0MDFGMzBGRkU4OTExRThCNEFGOTkxRDMzM0Y2Q0VDIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NTQwMUYzMENGRTg5MTFFOEI0QUY5OTFEMzMzRjZDRUMiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NTQwMUYzMERGRTg5MTFFOEI0QUY5OTFEMzMzRjZDRUMiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4gtF0NAAAQRElEQVR42uxd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) no-repeat center center;
+  background-size:138rpx 83rpx;
+}
+</style>
+
+<script>
+import wepy from 'wepy'
+import 'wepy-async-function'
+
+import wxlogin from './utils/wxlogin'
+import {api} from './config'
+import request from './utils/request'
+
+export default class extends wepy.app {
+  config = {
+    pages: [
+      'pages/index',
+      'pages/collect',
+      'pages/exchangeRate',
+      'pages/limaMap',
+      'pages/find',
+      'pages/findDetail',
+      'pages/map',
+      'pages/map1',
+      'pages/preferDetail',
+      'pages/webView',
+      'pages/tripLine',
+      'pages/recommendList'
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#880063',
+      navigationBarTitleText: '库斯科旅行指南',
+      navigationBarTextStyle: '#fff'
+    }
+  }
+
+  globalData = {
+    userInfo: null
+  }
+
+  constructor () {
+    super()
+    this.use('requestfix')
+  }
+  onLaunch() {
+    request({
+      url: api.live.url,
+      success: function (res) {
+        function compare (property) {
+          return function (obj1, obj2) {
+            var value1 = obj1[property]
+            var value2 = obj2[property]
+            return value2 - value1
+          }
+        }
+        var sortCategories = res.data.sort(compare('sort'))
+        wepy.setStorage({
+          key: 'live',
+          data: sortCategories
+        })
+      }
+    })
+    request({
+      url: api.regions.url,
+      success: function (res) {
+        wepy.setStorage({
+          key: 'regions',
+          data: res.data
+        })
+      }
+    })
+    wxlogin.login()
+  }
+}
+</script>

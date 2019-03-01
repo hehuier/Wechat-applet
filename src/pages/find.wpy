@@ -1,0 +1,176 @@
+<template>
+<view class="container detail-page">
+  <view class="find-container">
+    <view class="find-content">   
+      <repeat for="{{placesData}}" key="index" index="index" item="item">
+        <facilityItem :item="item"/>
+      </repeat>
+      <rowLoading />
+      <unData />
+    </view>
+  </view>
+  <view class="up-refresh" wx:if="{{!loading && canLoadingMore}}">
+      <text>上拉加载</text>
+      <image src="../images/up-arrow-black.png" mode="aspectFill"/>
+  </view>
+</view>
+</template>
+<script>
+  import wepy from 'wepy'
+  import {api} from '../config'
+  import request from '../utils/request'
+  import FacilityItem from '../components/facilityItem'
+  import RowLoading from '../components/rowLoading'
+  import UnData from '../components/unData'
+
+  export default class Find extends wepy.page {
+    config = {
+      navigationBarTitleText: '发现'
+    }
+    components = {
+      facilityItem: FacilityItem,
+      rowLoading: RowLoading,
+      unData: UnData
+    }
+    data = {
+      parentTitle: 'namenamenamamam',
+      dataInit: true,
+      loading: true,
+      canLoadingMore: true,
+      regionId: '',
+      page: 1,
+      size: 10,
+      cateId: '',
+      childId: '',
+      keyword: '',
+      placesData: []
+    }
+    getData (loadingMore) {
+      let self = this
+      self.loading = true
+      if (self.dataInit) {
+        wepy.showLoading({
+          title: '加载中'
+        })
+      } else {
+        self.$invoke('rowLoading', 'show')
+      }
+      request({
+        url: api.places.url + '&category_id=' + self.cateId + '&category_two_id=' + self.childId + '&page=' + self.page + '&size=' + self.size + '&words=' + self.keyword,
+        method: api.places.method,
+        success: function (res) {
+          self.loading = false
+          self.canLoadingMore = !(res.data.length < self.size)
+          if (self.dataInit) {
+            wepy.hideLoading()
+            self.dataInit = false
+          } else {
+            self.$invoke('rowLoading', 'hide')
+          }
+          if (res.data.length > 0) {
+            let data = res.data
+            let newData = []
+            let resetData = []
+            data.forEach((item) => {
+              let gallery = item.gallery
+              gallery.forEach((galleryItem) => {
+                var _item = {}
+                for (var i in item) {
+                  if (i !== 'gallery') {
+                    _item[i] = item[i]
+                  } else {
+                    _item['gallery'] = [galleryItem]
+                  }
+                }
+                newData.push(_item)
+              })
+            })
+            let ruleNum = 3
+            let defaultRuleNum = ruleNum - 1
+            while (defaultRuleNum >= 0) {
+              let _resetData = newData.filter((item, index) => {
+                return index % ruleNum === defaultRuleNum
+              })
+              resetData = resetData.concat(_resetData)
+              defaultRuleNum -= 1
+            }
+            if (loadingMore) {
+              self.placesData = self.placesData.concat(resetData)
+            } else {
+              self.placesData = resetData
+            }
+            self.page++
+            self.$invoke('unData', 'hide')
+          } else {
+            if (!loadingMore) {
+              self.placesData = []
+              self.$invoke('unData', 'show')
+            }
+          }
+          self.$apply()
+        }
+      })
+    }
+    onReachBottom () {
+      if (!this.loading && this.canLoadingMore) {
+        this.getData(true)
+      }
+    }
+    onLoad (options) {
+      let self = this
+      self.regionId = options.region_id
+      this.$invoke('facilityItem', 'replaceValue', self.regionId)
+      self.cateId = options.cateId
+      self.childId = options.childId
+      self.keyword = options.keyword
+      self.getData()
+    }
+    /**
+     * 用户点击右上角分享
+     */
+    onShareAppMessage (res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+      }
+      return {
+        title: this.detailData.title,
+        path: 'pages/facilityDetail?place_id=' + this.place_id,
+        success: function (res) {
+          // 转发成功
+        },
+        fail: function (res) {
+          // 转发失败
+        }
+      }
+    }
+  }
+</script>
+<style lang="less">
+  .find-container{
+    width: 100%;
+    height: auto;
+    padding: 50rpx;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  .find-content{
+    width: 100%;
+  }
+  .up-refresh{
+    width: 100%;
+    text-align: center;
+    text {
+      font-size: 20rpx;
+      line-height: 20rpx;
+      color: #666;
+    }
+    image{
+      width: 20rpx;
+      height: 20rpx;
+      vertical-align: middle;
+      margin-top: 2rpx;
+    }
+  }
+</style>
